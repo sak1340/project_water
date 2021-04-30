@@ -1,5 +1,9 @@
 import 'package:firebase_database/firebase_database.dart';
+import 'package:firebasetest/actions/ActionWeather.dart';
+import 'package:firebasetest/components/DeviceCard.dart';
+import 'package:firebasetest/components/Weather.dart';
 import 'package:firebasetest/main.dart';
+import 'package:firebasetest/models/WeatherForcast.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'sal.dart';
@@ -11,7 +15,7 @@ class ShowDB extends StatefulWidget {
 }
 
 class _ShowDBState extends State<ShowDB> with SingleTickerProviderStateMixin {
-
+  Future<WeatherForcast> weatherModel;
   String message;
   String channelId = "1000";
   String channelName = "FLUTTER_NOTIFICATION_CHANNEL";
@@ -24,17 +28,17 @@ class _ShowDBState extends State<ShowDB> with SingleTickerProviderStateMixin {
 
   void initialNotification() {
     message = "No message.";
- 
+
     var initializationSettingsAndroid =
         AndroidInitializationSettings('ic_launcher');
- 
+
     var initializationSettingsIOS = IOSInitializationSettings(
         onDidReceiveLocalNotification: (id, title, body, payload) {
       print("onDidReceiveLocalNotification called.");
     });
     var initializationSettings = InitializationSettings(
-        android : initializationSettingsAndroid, iOS:  initializationSettingsIOS);
- 
+        android: initializationSettingsAndroid, iOS: initializationSettingsIOS);
+
     flutterLocalNotificationsPlugin.initialize(initializationSettings,
         onSelectNotification: (payload) {
       // when user tap on notification.
@@ -44,25 +48,29 @@ class _ShowDBState extends State<ShowDB> with SingleTickerProviderStateMixin {
       });
     });
   }
+
   @override
   void initState() {
+    // getWeather();
+    weatherModel =
+        ActionWeather.weather(lat: 7.893977314032773, lng: 98.35261457403632);
     initialNotification();
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
   }
 
-   sendNotification({String title, String detail}) async {
+  sendNotification({String title, String detail}) async {
     var androidPlatformChannelSpecifics = AndroidNotificationDetails('10000',
         'FLUTTER_NOTIFICATION_CHANNEL', 'FLUTTER_NOTIFICATION_CHANNEL_DETAIL',
         importance: Importance.max, priority: Priority.high);
     var iOSPlatformChannelSpecifics = IOSNotificationDetails();
- 
+
     var platformChannelSpecifics = NotificationDetails(
-        android : androidPlatformChannelSpecifics,iOS: iOSPlatformChannelSpecifics);
- 
-    await flutterLocalNotificationsPlugin.show(111, '$title',
-        '$detail', platformChannelSpecifics,
-        payload: 's');
+        android: androidPlatformChannelSpecifics,
+        iOS: iOSPlatformChannelSpecifics);
+
+    await flutterLocalNotificationsPlugin
+        .show(111, '$title', '$detail', platformChannelSpecifics, payload: 's');
   }
 
   @override
@@ -75,116 +83,80 @@ class _ShowDBState extends State<ShowDB> with SingleTickerProviderStateMixin {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("WATER QUALITY"),
-        bottom: TabBar(
-            controller: _tabController,
-            onTap: (int index) {
-              setState(() {
-                tabIndex = index;
-              });
-            },
-            tabs: [
-              Tab(icon: Icon(Icons.ac_unit)),
-              Tab(icon: Icon(Icons.ac_unit)),
-            ]),
+        title: Text('Water Quality'),
       ),
-      body: StreamBuilder(
-          stream: firebaseData.onValue,
-          builder: (context, snapshot) {
-            if (snapshot.hasData &&
-                !snapshot.hasError &&
-                snapshot.data.snapshot.value != null) {
-              print("${snapshot.data.snapshot.value.toString()}");
-             
-              var _show = SAL.fromJson(snapshot.data.snapshot.value);
-              print("SAL : ${_show.temp} / ${_show.ec} / ${_show.sal}");
-              if(_show.sal > 30){
-                sendNotification(title: 'Caution!',detail: 'Salinity Too Much! ${_show.sal.floor()} ppt');
-              }
-              return IndexedStack(
-                  index: tabIndex,
-                  children: [_tempLayout(_show), _salLayout(_show)]);
-            } else {
-              return Center(child: Text("No Data"));
-            }
-          }),
+      body: SafeArea(
+        child: Container(
+          child: StreamBuilder(
+              stream: firebaseData.onValue,
+              builder: (context, snapshot) {
+                if (snapshot.hasData &&
+                    !snapshot.hasError &&
+                    snapshot.data.snapshot.value != null) {
+                  print("${snapshot.data.snapshot.value.toString()}");
+                  var _show = SAL.fromJson(snapshot.data.snapshot.value);
+                  print("SAL : ${_show.temp} / ${_show.ec} / ${_show.sal}");
+                  if (_show.sal > 30) {
+                    sendNotification(
+                        title: 'Caution!',
+                        detail: 'Salinity Too Much! ${_show.sal.floor()} ppt');
+                  }
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                    child: ListView(
+                      children: [
+                        Column(
+                          children: [
+                            Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(vertical: 10.0),
+                              child: Text('Weather',
+                                  style: TextStyle(
+                                      color: Colors.black, fontSize: 18)),
+                            ),
+                            Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(vertical: 10.0),
+                              child: WeatherWidget(
+                                weather_data: weatherModel,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Container(
+                            padding: const EdgeInsets.all(20),
+                            margin: const EdgeInsets.only(bottom: 20),
+                            decoration: BoxDecoration(
+                                color: Colors.blue,
+                                borderRadius: BorderRadius.circular(15)),
+                            child: Text('Water',
+                                style: TextStyle(
+                                    color: Colors.white, fontSize: 18))),
+                        DeviceCard(
+                          // item: '// item: 'Temperature',',
+                          item :Text('Temperature'),
+                          value: _show.temp,
+                          postFix: "C",
+                        ),
+                        DeviceCard(
+                          item :Text('Salinity'),
+                          value: _show.sal,
+                          postFix: 'PPT',
+                        ),
+                        DeviceCard(
+                          item :Text('EC'),
+                          value: _show.ec,
+                          postFix: "uS/m",
+                        ),
+                      ],
+                    ),
+                  );
+                } else {
+                  return Center(child: Text("No Data"));
+                }
+              }),
+        ),
+      ),
     );
-  }
-
-  Widget _tempLayout(SAL _show) {
-    return Center(
-        child: Column(
-      children: [
-  
-        Container(
-          padding: const EdgeInsets.only(top: 40),
-          child: Text(
-            "TEMPERATURE",
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24),
-          ),
-        ),
-        Expanded(
-            child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 20),
-          child: FAProgressBar(
-            progressColor: Colors.green,
-            direction: Axis.vertical,
-            verticalDirection: VerticalDirection.up,
-            size: 100,
-            currentValue: _show.temp.round(),
-            changeColorValue: 50,
-            changeProgressColor: Colors.red,
-            maxValue: 50,
-            displayText: "°C",
-            borderRadius: BorderRadius.circular(16),
-            animatedDuration: Duration(milliseconds: 500),
-          ),
-        )),
-        Container(
-            padding: const EdgeInsets.only(bottom: 40),
-            child: Text(
-              "${_show.temp.toStringAsFixed(2)} °C",
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 28),
-            ))
-      ],
-    ));
-  }
-
-  Widget _salLayout(SAL _show) {
-    return Center(
-        child: Column(
-      children: [
-        Container(
-          padding: const EdgeInsets.only(top: 40),
-          child: Text(
-            "SALINITY",
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24),
-          ),
-        ),
-        Expanded(
-            child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 20),
-          child: FAProgressBar(
-            progressColor: Colors.orange[200],
-            direction: Axis.vertical,
-            verticalDirection: VerticalDirection.up,
-            size: 100,
-            currentValue: _show.sal.round(),
-            changeColorValue: 50,
-            changeProgressColor: Colors.red[200],
-            maxValue: 42,
-            displayText: " ppt",
-            borderRadius: BorderRadius.circular(16),
-            animatedDuration: Duration(milliseconds: 500),
-          ),
-        )),
-        Container(
-            padding: const EdgeInsets.only(bottom: 40),
-            child: Text(
-              "${_show.sal.toStringAsFixed(2)} ppt",
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 28),
-            ))
-      ],
-    ));
   }
 }
