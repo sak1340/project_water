@@ -1,5 +1,7 @@
 import 'package:firebase_database/firebase_database.dart';
+import 'package:firebasetest/main.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'sal.dart';
 import 'package:flutter_animation_progress_bar/flutter_animation_progress_bar.dart';
 
@@ -9,16 +11,58 @@ class ShowDB extends StatefulWidget {
 }
 
 class _ShowDBState extends State<ShowDB> with SingleTickerProviderStateMixin {
+
+  String message;
+  String channelId = "1000";
+  String channelName = "FLUTTER_NOTIFICATION_CHANNEL";
+  String channelDescription = "FLUTTER_NOTIFICATION_CHANNEL_DETAIL";
+
   TabController _tabController;
   int tabIndex = 0;
-
   DatabaseReference firebaseData =
       FirebaseDatabase.instance.reference().child('DHT/Json');
 
+  void initialNotification() {
+    message = "No message.";
+ 
+    var initializationSettingsAndroid =
+        AndroidInitializationSettings('ic_launcher');
+ 
+    var initializationSettingsIOS = IOSInitializationSettings(
+        onDidReceiveLocalNotification: (id, title, body, payload) {
+      print("onDidReceiveLocalNotification called.");
+    });
+    var initializationSettings = InitializationSettings(
+        android : initializationSettingsAndroid, iOS:  initializationSettingsIOS);
+ 
+    flutterLocalNotificationsPlugin.initialize(initializationSettings,
+        onSelectNotification: (payload) {
+      // when user tap on notification.
+      print("onSelectNotification called.");
+      setState(() {
+        message = payload;
+      });
+    });
+  }
   @override
   void initState() {
+    initialNotification();
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+  }
+
+   sendNotification({String title, String detail}) async {
+    var androidPlatformChannelSpecifics = AndroidNotificationDetails('10000',
+        'FLUTTER_NOTIFICATION_CHANNEL', 'FLUTTER_NOTIFICATION_CHANNEL_DETAIL',
+        importance: Importance.max, priority: Priority.high);
+    var iOSPlatformChannelSpecifics = IOSNotificationDetails();
+ 
+    var platformChannelSpecifics = NotificationDetails(
+        android : androidPlatformChannelSpecifics,iOS: iOSPlatformChannelSpecifics);
+ 
+    await flutterLocalNotificationsPlugin.show(111, '$title',
+        '$detail', platformChannelSpecifics,
+        payload: 's');
   }
 
   @override
@@ -51,10 +95,12 @@ class _ShowDBState extends State<ShowDB> with SingleTickerProviderStateMixin {
                 !snapshot.hasError &&
                 snapshot.data.snapshot.value != null) {
               print("${snapshot.data.snapshot.value.toString()}");
-
+             
               var _show = SAL.fromJson(snapshot.data.snapshot.value);
               print("SAL : ${_show.temp} / ${_show.ec} / ${_show.sal}");
-
+              if(_show.sal > 30){
+                sendNotification(title: 'Caution!',detail: 'Salinity Too Much! ${_show.sal.floor()} ppt');
+              }
               return IndexedStack(
                   index: tabIndex,
                   children: [_tempLayout(_show), _salLayout(_show)]);
@@ -69,6 +115,7 @@ class _ShowDBState extends State<ShowDB> with SingleTickerProviderStateMixin {
     return Center(
         child: Column(
       children: [
+  
         Container(
           padding: const EdgeInsets.only(top: 40),
           child: Text(
@@ -89,7 +136,7 @@ class _ShowDBState extends State<ShowDB> with SingleTickerProviderStateMixin {
             changeProgressColor: Colors.red,
             maxValue: 50,
             displayText: "°C",
-            borderRadius: 16,
+            borderRadius: BorderRadius.circular(16),
             animatedDuration: Duration(milliseconds: 500),
           ),
         )),
@@ -127,7 +174,7 @@ class _ShowDBState extends State<ShowDB> with SingleTickerProviderStateMixin {
             changeProgressColor: Colors.red[200],
             maxValue: 42,
             displayText: " ppt",
-            borderRadius: 16,
+            borderRadius: BorderRadius.circular(16),
             animatedDuration: Duration(milliseconds: 500),
           ),
         )),

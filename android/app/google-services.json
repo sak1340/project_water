@@ -1,0 +1,69 @@
+{
+  "project_info": {
+    "project_number": "141344368891",
+    "firebase_url": "https://testwater-1fd68-default-rtdb.firebaseio.com",
+    "project_id": "testwater-1fd68",
+    "storage_bucket": "testwater-1fd68.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:141344368891:android:f19acf7357002b0068a85e",
+        "android_client_info": {
+          "package_name": "com.example.firebasetest"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "141344368891-cc36jp188pj5j5p2k4b6ftcpbv4gjtrd.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB-Ka4CNeK-bZULf-bE_UjyQn3_leroN3w"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "141344368891-cc36jp188pj5j5p2k4b6ftcpbv4gjtrd.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:141344368891:android:1014ae2e67816c1968a85e",
+        "android_client_info": {
+          "package_name": "com.example.waterquality"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "141344368891-cc36jp188pj5j5p2k4b6ftcpbv4gjtrd.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB-Ka4CNeK-bZULf-bE_UjyQn3_leroN3w"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "141344368891-cc36jp188pj5j5p2k4b6ftcpbv4gjtrd.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
